@@ -2,6 +2,16 @@
   text-align: center;
 }
 
+.dark-mode {
+  background-color: #333;
+  color: #fff;
+}
+
+.dark-mode-item {
+  /* Additional styles for dark mode news items */
+  border: 1px solid #fff;
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;
