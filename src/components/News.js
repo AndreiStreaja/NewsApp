@@ -1,109 +1,91 @@
-import React, { Component } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import NewsItems from './NewsItems';
 import Loading from './Loading';
 import PropTypes from 'prop-types';
 import Navbar from './Navbar';
 
-export class News extends Component {
+const News = () => {
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFields, setSelectedFields] = useState('title');
+  const [darkMode, setDarkMode] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
 
-  constructor() {
-    super();
-    this.state = {
-      articles: [],
-      loading: false,
-      searchTerm: '',
-      selectedFields: 'title',
-      darkMode: false, // New state for dark mode
-      totalResults:0
-    };
-
-  }
-
-  toggleDarkMode = () => {
-    this.setState((prevState) => ({
-      darkMode: !prevState.darkMode,
-    }));
+  const toggleDarkMode = () => {
+    setDarkMode((prevDarkMode) => !prevDarkMode);
   };
 
-
-
-
- async updateNews(category){
+  const updateNews = async (category) => {
     const url = `https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=1bafc55bbb794fef8dbe2c9b07d71949&pageSize=100`;
-    this.setState({ loading: true });
+    setLoading(true);
     const data = await fetch(url);
     const parsedData = await data.json();
-    this.setState({
-      totalResults: parsedData.totalResults,
-      articles: parsedData.articles,
-      loading: false,
-    });
-  }
-
-  fetchNewsByCategory = async (category) => {
-    this.updateNews(category);
-
+    setTotalResults(parsedData.totalResults);
+    setArticles(parsedData.articles);
+    setLoading(false);
   };
 
-  async componentDidMount() {
-    this.updateNews('general');
-  }
+  const fetchNewsByCategory = async (category) => {
+    updateNews(category);
+  };
 
-
-
-  handleSearch = async (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    await this.fetchNewsBySearch();
+    await fetchNewsBySearch();
   };
 
-  formatSearchQuery = (query) => {
+  const formatSearchQuery = (query) => {
     return encodeURIComponent(query);
   };
 
-  fetchNewsBySearch = async () => {
-    const { searchTerm, selectedFields } = this.state;
-    const formattedQuery = this.formatSearchQuery(searchTerm);
-    
-    let url = ` https://newsapi.org/v2/top-headlines?q=${formattedQuery}&country=us&${selectedFields}&apiKey=1bafc55bbb794fef8dbe2c9b07d71949&pageSize=100`;
-
-    this.setState({ loading: true });
+  const fetchNewsBySearch = async () => {
+    const formattedQuery = formatSearchQuery(searchTerm);
+    let url = `https://newsapi.org/v2/top-headlines?q=${formattedQuery}&country=us&${selectedFields}&apiKey=1bafc55bbb794fef8dbe2c9b07d71949&pageSize=100`;
+    setLoading(true);
     const data = await fetch(url);
     const parsedData = await data.json();
-    this.setState({
-      totalResults: parsedData.totalResults,
-      articles: parsedData.articles,
-      loading: false,
-    
-  });
-  }
+    setTotalResults(parsedData.totalResults);
+    setArticles(parsedData.articles);
+    setLoading(false);
+  };
 
-  render() {
-    const { darkMode } = this.state; // Extract darkMode from state
-    return (
-        <div className={darkMode ? 'dark-mode' : ''}>
+  useEffect(() => {
+    updateNews('general');
+  }, []);
+
+  return (
+    <div  style={{backgroundColor: darkMode ? '#766460' : '#fff'}}>
       <div>
-        <Navbar 
-         fetchNewsByCategory={this.fetchNewsByCategory}  
-         handleSearch={this.handleSearch}
-         searchTerm={this.state.searchTerm}
-         selectedFields={this.state.selectedFields}
-         handleSearchTermChange={(e) => this.setState({ searchTerm: e.target.value })}
-         handleSelectedFieldsChange={(e) => this.setState({ selectedFields: e.target.value })}
-         darkMode={this.state.darkMode} 
-       />
-            <div className="d-flex justify-content-end mt-2">
-                <div className="form-check form-switch ml-auto">
-                      <input  onClick={this.toggleDarkMode} className="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault"/>
-                      <label className="form-check-label" htmlFor="flexSwitchCheckDefault">{darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</label>
-                </div>
-             </div>
-
-        <div className="container" >
-          <div className="d-flex justify-content-end">
+        <Navbar
+          fetchNewsByCategory={fetchNewsByCategory}
+          handleSearch={handleSearch}
+          searchTerm={searchTerm}
+          selectedFields={selectedFields}
+          handleSearchTermChange={(e) => setSearchTerm(e.target.value)}
+          handleSelectedFieldsChange={(e) => setSelectedFields(e.target.value)}
+          darkMode={darkMode}
+        />
+        <div className="d-flex justify-content-end mt-2">
+          <div className="form-check form-switch ml-auto">
+            <input
+              onClick={toggleDarkMode}
+              className="form-check-input"
+              type="checkbox"
+              role="switch"
+              id="flexSwitchCheckDefault"
+            />
+            <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
+              {darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            </label>
           </div>
-          {this.state.loading && <Loading />}
+        </div>
+        <div className="container">
+          {loading && <Loading />}
           <div className="container row">
-            {!this.state.loading && this.state.articles.map((element) => {
+            {!loading &&
+              articles.map((element) => {
                 return (
                   <div className="col md-4" key={element.url}>
                     <NewsItems
@@ -115,7 +97,7 @@ export class News extends Component {
                       }
                       imgUrl={element.urlToImage}
                       readMore={element.url}
-                      darkMode={this.state.darkMode} 
+                      darkMode={darkMode}
                     />
                   </div>
                 );
@@ -124,10 +106,9 @@ export class News extends Component {
           <div className="container d-flex justify-content-between"></div>
         </div>
       </div>
-      </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 News.propTypes = {
   country: PropTypes.string,
